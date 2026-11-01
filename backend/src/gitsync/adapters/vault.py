@@ -30,16 +30,23 @@ def _key(data_dir: Path) -> bytes:
     return path.read_bytes()
 
 
-def encrypt(text: str, data_dir: Path) -> str:
-    if not text:
-        return ""
-    return Fernet(_key(data_dir)).encrypt(text.encode()).decode()
+class FernetVault:
+    """Fernet 实现。"""
 
+    def __init__(self, data_dir: Path):
+        self.data_dir = data_dir
 
-def decrypt(token: str, data_dir: Path) -> str:
-    if not token:
-        return ""
-    try:
-        return Fernet(_key(data_dir)).decrypt(token.encode()).decode()
-    except InvalidToken as exc:
-        raise SecretError("远程凭据无法解密（密钥可能变了）") from exc
+    def encrypt(self, plain: str) -> str:
+        """加密。"""
+        if not plain:
+            return ""
+        return Fernet(_key(self.data_dir)).encrypt(plain.encode()).decode()
+
+    def decrypt(self, cipher: str) -> str:
+        """解密。"""
+        if not cipher:
+            return ""
+        try:
+            return Fernet(_key(self.data_dir)).decrypt(cipher.encode()).decode()
+        except InvalidToken as exc:
+            raise SecretError("远程凭据无法解密（密钥可能变了）") from exc

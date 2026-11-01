@@ -7,10 +7,13 @@ import json
 import sys
 
 from . import __version__
-from .config import ConfigError, load_config
-from .db import Store
-from .gitea import Client, GiteaError
-from .sync import Outcome, sync_repo
+from .adapters.config import ConfigError, load_config
+from .adapters.git_cli import CliGitTransport
+from .adapters.gitea import GiteaProvider
+from .adapters.store import Store
+from .adapters.vault import FernetVault
+from .ports import ProviderError
+from .services.sync import Outcome, SyncService
 
 
 def _store(cfg_path):
@@ -18,10 +21,16 @@ def _store(cfg_path):
     return cfg, Store(cfg.db_path)
 
 
+def _service(cfg, store) -> SyncService:
+    """装配处理层。"""
+    return SyncService(cfg, store, FernetVault(cfg.db_path.parent), CliGitTransport(cfg.temp_dir))
+
+
 def cmd_repo_add(args) -> int:
+    """登记一个配对。"""
     cfg, store = _store(args.config)
     try:
-        repo = store.add_repo(
+        repo = store.add_pair(
             args.name,
             args.local,
             args.remote,
@@ -39,8 +48,9 @@ def cmd_repo_add(args) -> int:
 
 
 def cmd_repo_list(args) -> int:
+    """列出已登记的配对。"""
     _, store = _store(args.config)
-    repos = store.list_repos()
+    repos = store.list_pairs()
     store.close()
     if not repos:
         print("还没有仓库，用 repo add 添加。")
@@ -57,9 +67,10 @@ def cmd_repo_list(args) -> int:
 
 
 def cmd_repo_remove(args) -> int:
+    """删除配对记录，不动仓库。"""
     _, store = _store(args.config)
     try:
-        store.remove_repo(args.name)
+        store.delete_pair(args.name)
     except KeyError as exc:
         store.close()
         print(str(exc), file=sys.stderr)
@@ -70,15 +81,16 @@ def cmd_repo_remove(args) -> int:
 
 
 def cmd_repos(args) -> int:
+    """列出本地端（Gitea）里当前账号能看到的仓库。"""
     cfg = load_config(args.config)
-    client = Client(cfg.local_url, cfg.local_token)
+    provider = GiteaProvider(cfg.local_url)
     try:
-        user = client.get_user()
-        repos = client.list_repos()
-    except GiteaError as exc:
+        user = provider.get_user(cfg.local_token)
+        repos = provider.list_repos(cfg.local_token)
+    except ProviderError as exc:
         print(f"连接失败：{exc}", file=sys.stderr)
         return 2
-    print(f"账号：{user['login']}（{user.get('full_name') or '-'}）")
+    print(f"账号：{user.login}（{user.full_name or '-'}）")
     print(f"仓库：{len(repos)} 个")
     for repo in repos:
         flags = []
@@ -95,19 +107,21 @@ def cmd_repos(args) -> int:
 
 
 def cmd_sync(args) -> int:
+    """执行同步；有失败项时返回码为 1，方便放进定时任务。"""
     cfg, store = _store(args.config)
-    repos = store.list_repos()
+    repos = store.list_pairs()
     if args.repo:
         try:
-            repos = [store.get_repo(args.repo)]
+            repos = [store.get_pair(args.repo)]
         except KeyError as exc:
             store.close()
             print(str(exc), file=sys.stderr)
             return 2
 
+    service = _service(cfg, store)
     outcomes: list[Outcome] = []
     for repo in repos:
-        outcomes.extend(sync_repo(repo, cfg, store))
+        outcomes.extend(service.sync_pair(repo))
     store.close()
 
     if args.json:
@@ -126,19 +140,21 @@ def cmd_sync(args) -> int:
 
 
 def cmd_status(args) -> int:
+    """查看状态；--live 走只读比对。"""
     cfg, store = _store(args.config)
-    repos = store.list_repos()
+    repos = store.list_pairs()
     if args.repo:
         try:
-            repos = [store.get_repo(args.repo)]
+            repos = [store.get_pair(args.repo)]
         except KeyError as exc:
             store.close()
             print(str(exc), file=sys.stderr)
             return 2
     if args.live:
+        service = _service(cfg, store)
         outcomes: list[Outcome] = []
         for repo in repos:
-            outcomes.extend(sync_repo(repo, cfg, store, apply=False))
+            outcomes.extend(service.compare(repo))
         store.close()
         print("只读对比（不会修改任何东西）：")
         for o in outcomes:
@@ -150,16 +166,16 @@ def cmd_status(args) -> int:
 
     rows = []
     for repo in repos:
-        for row in store.list_status(repo.id):
+        for row in store.list_branches(repo.id):
             rows.append(
                 {
                     "repo": repo.name,
-                    "branch": row["branch"],
-                    "status": row["status"],
-                    "local": row["local_sha"],
-                    "remote": row["remote_sha"],
-                    "backup": row["backup_branch"],
-                    "detail": row["detail"],
+                    "branch": row.branch,
+                    "status": row.status,
+                    "local": row.local_sha,
+                    "remote": row.remote_sha,
+                    "backup": row.backup_branch,
+                    "detail": row.detail,
                 }
             )
     store.close()

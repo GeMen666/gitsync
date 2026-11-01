@@ -5,25 +5,13 @@ from __future__ import annotations
 import os
 import stat
 import tomllib
-from dataclasses import dataclass
 from pathlib import Path
+
+from ..ports.settings import Settings
 
 
 class ConfigError(Exception):
     """配置文件本身有问题。"""
-
-
-@dataclass(frozen=True)
-class Config:
-    path: Path
-    local_url: str
-    local_username: str
-    local_token: str
-    remote_username: str
-    remote_token: str
-    db_path: Path
-    temp_dir: Path
-    log_dir: Path
 
 
 def _secret(section: dict, name: str) -> str:
@@ -44,7 +32,8 @@ def _resolve(base: Path, raw: str) -> Path:
     return path if path.is_absolute() else base / path
 
 
-def load_config(explicit: str | os.PathLike[str] | None = None) -> Config:
+def load_config(explicit: str | os.PathLike[str] | None = None) -> Settings:
+    """读取并校验配置文件。"""
     raw = explicit or os.environ.get("GITSYNC_CONFIG") or "config.toml"
     path = Path(raw).expanduser().resolve()
     if not path.is_file():
@@ -66,7 +55,7 @@ def load_config(explicit: str | os.PathLike[str] | None = None) -> Config:
     if not local_url:
         raise ConfigError("[local] 缺少 url")
 
-    return Config(
+    return Settings(
         path=path,
         local_url=local_url,
         local_username=str(local.get("username") or ""),

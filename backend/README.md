@@ -20,7 +20,7 @@ python3 -m venv .venv
 ## 启动 API
 
 ```bash
-.venv/bin/uvicorn gitsync.web:app --host 127.0.0.1 --port 8000 --reload
+.venv/bin/uvicorn gitsync.api.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 配置默认读当前目录的 `config.toml`，也可以用环境变量 `GITSYNC_CONFIG` 指定。

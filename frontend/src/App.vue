@@ -1,4 +1,5 @@
 <script setup>
+// 页面只展示后端状态，写操作后统一 refresh()
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 const me = ref(null)
@@ -35,15 +36,13 @@ const currentPair = computed(() =>
 
 // 表格只读后端持久化的状态，前端不再拼临时结果
 const rows = computed(() => {
-  const list = currentPair.value ? currentPair.value.status : []
+  const list = currentPair.value ? currentPair.value.branches : []
   return [...list].sort((a, b) => a.branch.localeCompare(b.branch))
 })
 
 const lastUpdated = computed(() => {
-  const list = currentPair.value ? currentPair.value.status : []
-  if (!list.length) return ''
-  const latest = list.map((item) => item.updated_at).sort().at(-1)
-  return new Date(latest).toLocaleString('zh-CN', { hour12: false })
+  const value = currentPair.value ? currentPair.value.last_updated : ''
+  return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : ''
 })
 
 const busyText = computed(() => {
@@ -185,7 +184,7 @@ async function removePair(pair) {
   busy.value = pair.name
   busyAction.value = 'remove'
   try {
-    await json(await fetch(`/api/pairs/${pair.name}`, { method: 'DELETE' }))
+    await json(await fetch(`/api/pairs/${pair.id}`, { method: 'DELETE' }))
     await refresh()
   } catch (exc) {
     error.value = exc.message
@@ -200,7 +199,7 @@ async function patch(pair, body, action = 'patch') {
   busyAction.value = action
   try {
     await json(
-      await fetch(`/api/pairs/${pair.name}`, {
+      await fetch(`/api/pairs/${pair.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -234,13 +233,12 @@ async function saveCred(pair) {
 }
 
 async function run(pair, mode) {
-  const target = pair.name
-  busy.value = target
+  busy.value = pair.name
   busyAction.value = mode
   error.value = ''
   try {
-    const url = `/api/pairs/${target}/${mode === 'live' ? 'live' : 'sync'}`
-    await json(await fetch(url, { method: mode === 'live' ? 'GET' : 'POST' }))
+    const action = mode === 'live' ? 'compare' : 'sync'
+    await json(await fetch(`/api/pairs/${pair.id}/${action}`, { method: 'POST' }))
     await refresh()
   } catch (exc) {
     error.value = exc.message
@@ -260,10 +258,8 @@ async function branchAction(st, action) {
   busyBranch.value = st.branch
   try {
     await json(
-      await fetch(`/api/branch/${action}`, {
+      await fetch(`/api/pairs/${pair.id}/branches/${st.branch}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: pair.name, branch: st.branch }),
       })
     )
     await refresh()

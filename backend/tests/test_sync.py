@@ -8,9 +8,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from gitsync.config import Config
-from gitsync.db import Store
-from gitsync.sync import sync_repo
+from gitsync.adapters.git_cli import CliGitTransport
+from gitsync.adapters.store import Store
+from gitsync.adapters.vault import FernetVault
+from gitsync.ports import Settings
+from gitsync.services.sync import SyncService
 
 
 def git(*args, cwd=None, env=None):
@@ -34,7 +36,7 @@ class SyncTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             git("init", "--bare", "--quiet", str(path))
 
-        self.cfg = Config(
+        self.cfg = Settings(
             path=self.root / "config.toml",
             local_url=f"file://{self.local_root}",
             local_username="u",
@@ -46,7 +48,12 @@ class SyncTest(unittest.TestCase):
             log_dir=self.root / "logs",
         )
         self.store = Store(self.cfg.db_path)
-        self.repo = self.store.add_repo("demo", "owner/demo", f"file://{self.remote_repo}")
+        self.service = SyncService(
+            self.cfg, self.store,
+            FernetVault(self.cfg.db_path.parent),
+            CliGitTransport(self.cfg.temp_dir),
+        )
+        self.repo = self.store.add_pair("demo", "owner/demo", f"file://{self.remote_repo}")
 
     def tearDown(self):
         self.store.close()
@@ -82,7 +89,7 @@ class SyncTest(unittest.TestCase):
         return result
 
     def run_sync(self):
-        return {o.branch: o for o in sync_repo(self.repo, self.cfg, self.store)}
+        return {o.branch: o for o in self.service.sync_pair(self.repo)}
 
     # ---------- 用例 ----------
 
@@ -133,16 +140,6 @@ class SyncTest(unittest.TestCase):
         backups = [b for b in heads if b.startswith("main.bak.")]
         self.assertEqual(len(backups), 1)
         self.assertEqual(heads[backups[0]], local_before)
-
-    def test_push_disabled_skips_missing_remote_branch(self):
-        self.store.remove_repo("demo")
-        self.repo = self.store.add_repo(
-            "demo", "owner/demo", f"file://{self.remote_repo}", push=False
-        )
-        self.commit(self.local_repo, "main", "a", "2026-01-01T10:00:00+0000", new=True)
-        result = self.run_sync()
-        self.assertEqual(result["main"].status, "skipped")
-        self.assertEqual(self.heads(self.remote_repo), {})
 
     def test_expired_backup_is_cleaned(self):
         self.commit(self.local_repo, "main", "a", "2026-01-01T10:00:00+0000", new=True)

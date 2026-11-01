@@ -66,7 +66,7 @@ python3 -m venv .venv
 .venv/bin/pip install -e ".[web,dev]"
 cp config.example.toml config.toml   # 填 Gitea 地址
 chmod 600 config.toml
-.venv/bin/uvicorn gitsync.web:app --host 127.0.0.1 --port 8000 --reload
+.venv/bin/uvicorn gitsync.api.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### 前端
