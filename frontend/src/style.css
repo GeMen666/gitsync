@@ -1,9 +1,6 @@
 * { box-sizing: border-box; }
 
-html, body {
-  margin: 0;
-  padding: 0;
-}
+html, body { margin: 0; padding: 0; }
 
 body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -14,3 +11,24 @@ body {
 }
 
 #app { min-height: 100vh; }
+
+input:not([type=checkbox]) {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #2f6f4e;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:disabled { opacity: .5; cursor: default; filter: grayscale(.4); }
+button.link { background: none; color: #2f6f4e; padding: 0 6px; text-decoration: underline; font-size: 13px; }
+button.danger { background: #b5483a; }
+button.small { padding: 4px 10px; font-size: 12px; line-height: 1.2; }
