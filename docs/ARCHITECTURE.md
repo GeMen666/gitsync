@@ -102,38 +102,40 @@ class GitWorkspace(Protocol):
 
 ## 6. 分层与接口
 
-每一层只依赖下一层的**接口**。
-
 ```
 ┌─────────────────────────────────────────────┐
-│ 前端 Vue 组件 ──▶ api 客户端模块 ──▶ HTTP     │
+│ 前端 Vue ──▶ src/api.js ──▶ HTTP             │
 └──────────────────────┬──────────────────────┘
 ┌──────────────────────▼──────────────────────┐
-│ 接口层 api/    FastAPI 路由 + 请求/响应模型   │
+│ 后端接口层  api/  FastAPI 路由 + 请求模型     │
 └──────────────────────┬──────────────────────┘
 ┌──────────────────────▼──────────────────────┐
-│ 处理层 services/   比对、同步、权限校验        │
+│ 后端处理层  services/  比对、同步、选边       │
 └───┬──────────────┬───────────────┬──────────┘
     ▼              ▼               ▼
- git 操作层     数据库操作层      Gitea API 层
- (Protocol)     (Protocol)       (Protocol)
+ 数据库层       Gitea API 调用层   git 操作层
+ (Protocol)      (Protocol)        (Protocol)
+                 + 凭据层
 ```
 
-| 层           | 职责                     | 对外接口                | 可替换实现                 |
-| ------------ | ------------------------ | ----------------------- | -------------------------- |
-| 前端接口     | 组件不直接发请求         | `src/api.js`            | 换框架只改这一层           |
-| 接口层       | 参数校验、会话、序列化   | FastAPI 路由            | —                          |
-| 处理层       | 编排流程、权限判断       | Service 方法            | —                          |
-| git 操作层   | 搬运提交对象             | `GitTransport`          | 系统 git / libgit2         |
-| 数据库操作层 | 持久化                   | `StateStore`            | SQLite / Postgres          |
-| Gitea API 层 | 身份、仓库、权限         | `RepoProvider`          | Gitea / GitLab             |
+| 层 | 职责 | 对外接口 | 实现 |
+| --- | --- | --- | --- |
+| 前端 | 展示、触发、状态展示 | `src/api.js`、`Pair`/`Branch` | Vue 组件 |
+| 后端接口层 | 参数校验、会话、序列化、权限 | FastAPI 路由 | `api/app.py` |
+| 后端处理层 | 编排流程、判定该不该搬 | `SyncService` | `services/sync.py` |
+| 数据库层 | 持久化 | `StateStore` | `adapters/store.py` |
+| Gitea API 调用层 | 身份、仓库、权限 | `RepoProvider` | `adapters/gitea.py` |
+| git 操作层 | 搬运提交对象 | `GitTransport` / `GitWorkspace` | `adapters/git_cli.py` |
+| 凭据层 | 远程凭据加解密 | `SecretVault` | `adapters/vault.py` |
 
 四条约束：
 
 1. 接口层只解析请求、调处理层、序列化响应，不写业务逻辑
-2. 处理层不出现 `subprocess` / `sqlite3` / `urllib`，只走 Protocol
-3. 每个操作层都有假实现，测试不需要真实 Gitea 或网络
+2. 处理层不出现 `subprocess` / `sqlite3` / `urllib`，只走 `ports/` 里的接口
+3. 每个操作层都能换成别的实现，测试不需要真实 Gitea 或网络
 4. 前端组件里不出现 `fetch`，统一走 `src/api.js`
+
+接口清单、数据结构与函数表见 [模块与接口](MODULES.md)。
 
 ---
 

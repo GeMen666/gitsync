@@ -36,44 +36,50 @@
 
 ## 2. 数据模型
 
+数据库是 SQLite，表定义见 `adapters/store.py` 的 `SCHEMA`。
+
 ### sessions
 
-| 字段       | 类型 | 说明                                   |
-| ---------- | ---- | -------------------------------------- |
-| id         | TEXT | 主键，随机 32 字节，放 cookie          |
-| username   | TEXT | Gitea 登录名                           |
-| token_enc  | TEXT | 登录时换来的令牌（加密）               |
-| created_at | TEXT | UTC ISO8601                            |
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | TEXT | 主键，随机串，放 cookie |
+| username | TEXT | Gitea 登录名 |
+| token | TEXT | 登录时换来的 Gitea 令牌 |
+| created_at | TEXT | UTC ISO8601 |
 
-### repos
+### repos（配对）
 
-| 字段               | 类型    | 说明                                   |
-| ------------------ | ------- | -------------------------------------- |
-| id                 | INTEGER | 主键                                   |
-| name               | TEXT    | 唯一，默认等于 local_repo              |
-| owner              | TEXT    | Gitea 登录名，用于权限判断             |
-| local_repo         | TEXT    | `owner/name`                           |
-| remote_url         | TEXT    | 远程 git 地址                          |
-| remote_username    | TEXT    | 远程账号，可空                         |
-| remote_secret_enc  | TEXT    | 远程令牌/密码（Fernet 密文），可空     |
-| retention_days     | INTEGER | 备份保留天数，默认 7                   |
-| created_at         | TEXT    | UTC ISO8601                            |
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | INTEGER | 主键 |
+| owner | TEXT | Gitea 登录名，用于归属判断 |
+| name | TEXT | 唯一，默认等于 local_repo |
+| local_repo | TEXT | `owner/name` |
+| remote_url | TEXT | 远程 git 地址 |
+| remote_username | TEXT | 远程账号，可空 |
+| remote_secret | TEXT | 远程令牌密文（Fernet），可空 |
+| push_enabled | INTEGER | 预留，当前恒为 1 |
+| pull_enabled | INTEGER | 预留，当前恒为 1 |
+| backup_retention_days | INTEGER | 备份保留天数，默认 7 |
+| created_at | TEXT | UTC ISO8601 |
 
-### branches
+### branch_status（分支状态）
 
-| 字段          | 类型    | 说明                                                   |
-| ------------- | ------- | ------------------------------------------------------ |
-| pair_id       | INTEGER | 外键 -> repos.id                                       |
-| branch        | TEXT    | 分支名                                                 |
-| local_sha     | TEXT    | 本地端该分支的提交，空表示不存在                       |
-| remote_sha    | TEXT    | 远程端该分支的提交，空表示不存在                       |
-| status        | TEXT    | 见 §3                                                  |
-| detail        | TEXT    | 说明文字                                               |
-| backup_branch | TEXT    | 备份分支名，可空                                       |
-| backup_side   | TEXT    | 备份在哪一侧：`local` / `remote`                       |
-| updated_at    | TEXT    | UTC ISO8601                                            |
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| repo_id | INTEGER | 外键 → repos.id |
+| branch | TEXT | 分支名 |
+| local_sha | TEXT | 本地端该分支提交，空表示不存在 |
+| remote_sha | TEXT | 远程端该分支提交，空表示不存在 |
+| status | TEXT | 见 §3 |
+| backup_branch | TEXT | 备份分支名，可空 |
+| backup_side | TEXT | 备份保存的是哪一侧版本：`local` / `remote` |
+| backup_missing | INTEGER | 备份已被清理标记，0/1 |
+| frozen | INTEGER | 预留 |
+| detail | TEXT | 备注 |
+| updated_at | TEXT | UTC ISO8601 |
 
-主键 `(pair_id, branch)`。
+主键 `(repo_id, branch)`。
 
 ---
 
@@ -260,64 +266,59 @@
 
 ---
 
-## 5. 操作层接口（Protocol）
+## 5. 接口（Protocol）
+
+完整签名与调用顺序见 [模块与接口](MODULES.md) 第 2 节。
 
 ```python
-@dataclass(frozen=True)
-class Endpoint:
-    name: str          # local | remote
-    url: str
-    username: str = ""
-    token: str = ""
-
-
 class GitTransport(Protocol):
     def list_refs(self, ep: Endpoint) -> dict[str, str]: ...
     def workspace(self) -> GitWorkspace: ...
 
-
 class GitWorkspace(Protocol):
-    def fetch(self, ep: Endpoint, branch: str) -> str: ...
-    def commit_time(self, sha: str) -> int: ...
-    def push(self, ep: Endpoint, sha: str, branch: str) -> None: ...
-    def overwrite(self, ep: Endpoint, sha: str, branch: str, *, expected: str) -> None: ...
-    def delete(self, ep: Endpoint, branch: str) -> None: ...
-
+    def fetch(self, ep, branch) -> str: ...
+    def commit_time(self, sha) -> int: ...
+    def push(self, ep, sha, branch) -> None: ...
+    def overwrite(self, ep, sha, branch, *, expected) -> None: ...
+    def delete(self, ep, branch) -> None: ...
 
 class StateStore(Protocol):
-    def create_session(self, sid: str, username: str, token: str) -> None: ...
-    def get_session(self, sid: str) -> Session | None: ...
-    def delete_session(self, sid: str) -> None: ...
-    def add_pair(self, owner: str, local_repo: str, remote_url: str) -> Pair: ...
-    def get_pair(self, pair_id: int) -> Pair | None: ...
-    def list_pairs(self, owner: str) -> list[Pair]: ...
-    def delete_pair(self, pair_id: int) -> None: ...
-    def save_branches(self, pair_id: int, rows: list[BranchState]) -> None: ...
-    def load_branches(self, pair_id: int) -> list[BranchState]: ...
-
+    def create_session(self, sid, username, token) -> None: ...
+    def get_session(self, sid) -> Session | None: ...
+    def delete_session(self, sid) -> None: ...
+    def add_pair(self, name, local_repo, remote_url, **kw) -> Pair: ...
+    def get_pair(self, name) -> Pair: ...
+    def get_pair_by_id(self, pair_id) -> Pair | None: ...
+    def list_pairs(self, owner=None) -> list[Pair]: ...
+    def update_pair(self, name, **kw) -> Pair: ...
+    def delete_pair(self, name) -> None: ...
+    def save_branch(self, pair_id, branch, **kw) -> None: ...
+    def get_branch(self, pair_id, branch) -> BranchState | None: ...
+    def list_branches(self, pair_id) -> list[BranchState]: ...
+    def prune_branches(self, pair_id, keep) -> None: ...
+    def mark_backup_missing(self, pair_id, branch, detail) -> None: ...
 
 class RepoProvider(Protocol):
-    def verify_login(self, username: str, password: str) -> User: ...
-    def issue_token(self, username: str, password: str) -> str: ...
-    def get_user(self, token: str) -> User: ...
-    def list_repos(self, token: str) -> list[Repo]: ...
-    def get_repo(self, token: str, full_name: str) -> Repo: ...
-
+    def verify_login(self, username, password) -> User: ...
+    def issue_token(self, username, password, name) -> str: ...
+    def get_user(self, token) -> User: ...
+    def list_repos(self, token) -> list[RemoteRepo]: ...
+    def get_repo(self, token, full_name) -> RemoteRepo: ...
 
 class SecretVault(Protocol):
-    def encrypt(self, plain: str) -> str: ...
-    def decrypt(self, cipher: str) -> str: ...
+    def encrypt(self, plain) -> str: ...
+    def decrypt(self, cipher) -> str: ...
 ```
 
 ### 错误类型
 
-| 异常             | 触发条件                     | 映射状态码 |
-| ---------------- | ---------------------------- | ---------- |
-| `BranchNotFound` | 分支在源侧不存在             | 404        |
-| `NonFastForward` | 快进推送被拒                 | 400        |
-| `LeaseMismatch`  | 覆盖时远端已变化             | 409        |
-| `AuthFailed`     | 凭据无效                     | 401 / 502  |
-| `NetworkError`   | 超时、连接失败               | 502        |
+| 异常 | 触发条件 | 映射状态码 |
+| --- | --- | --- |
+| `GitError` | git 操作失败 | 400 |
+| `NonFastForward` | 快进推送被拒 | 400 |
+| `LeaseMismatch` | 覆盖时远端已变化 | 400 |
+| `ProviderError` | Gitea 调用失败（含密码错误） | 401 / 502 |
+| `KeyError` / 归属不符 | 配对不存在或不属于当前用户 | 404 |
 
 ---
 

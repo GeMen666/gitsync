@@ -93,13 +93,19 @@ cd backend
 
 ```
 gitsync/
-├── backend/          FastAPI + 同步引擎
-│   ├── src/gitsync/
-│   └── tests/
+├── backend/
+│   └── src/gitsync/
+│       ├── api/          后端接口层（路由、会话）
+│       ├── services/     后端处理层（同步、选边）
+│       ├── ports/        各层接口定义
+│       ├── adapters/     数据库 / Gitea / git / 凭据实现
+│       └── cli.py        命令行
 ├── frontend/         Vue 3 + Vite
 ├── docs/
 │   ├── ARCHITECTURE.md   设计取舍与分层
-│   └── DEV.md            接口、字段、错误码
+│   ├── MODULES.md        接口、数据结构、函数表
+│   ├── DEV.md            字段、接口、错误码
+│   └── FRONTEND.md       前端模型与组件
 └── README.md
 ```
 
@@ -119,7 +125,7 @@ gitsync/
 | 文档                             | 内容                                             |
 | -------------------------------- | ------------------------------------------------ |
 | [架构设计](docs/ARCHITECTURE.md) | 问题背景、铁律、同步规则、分层与接口、git 操作层 |
-| [模块与接口图](docs/MODULES.md) | 后端每层的接口、实现与函数清单 |
+| [模块与接口](docs/MODULES.md) | 按层列出的接口、数据结构与函数表 |
 | [前端文档](docs/FRONTEND.md) | 数据模型、组件、数据流与显示规则 |
 | [开发文档](docs/DEV.md)          | 后端接口、数据模型字段、错误码、Protocol 签名    |
 
