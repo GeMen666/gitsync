@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS branch_status (
     status        TEXT NOT NULL,
     backup_branch TEXT NOT NULL DEFAULT '',
     backup_side   TEXT NOT NULL DEFAULT '',
+    backup_missing INTEGER NOT NULL DEFAULT 0,
     frozen        INTEGER NOT NULL DEFAULT 0,
     detail        TEXT,
     updated_at    TEXT NOT NULL,
@@ -77,6 +78,7 @@ class Store:
         for column, ddl in (
             ("backup_branch", "TEXT NOT NULL DEFAULT ''"),
             ("backup_side", "TEXT NOT NULL DEFAULT ''"),
+            ("backup_missing", "INTEGER NOT NULL DEFAULT 0"),
             ("frozen", "INTEGER NOT NULL DEFAULT 0"),
         ):
             if column not in status_cols:
@@ -210,6 +212,7 @@ class Store:
         status: str,
         backup_branch: str | None = None,
         backup_side: str | None = None,
+        backup_missing: bool | None = None,
         detail: str = "",
     ) -> None:
         """写入分支状态。"""
@@ -217,19 +220,22 @@ class Store:
             self.conn.execute(
                 """INSERT INTO branch_status
                    (repo_id, branch, local_sha, remote_sha, status,
-                    backup_branch, backup_side, detail, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    backup_branch, backup_side, backup_missing, detail, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(repo_id, branch) DO UPDATE SET
                      local_sha = excluded.local_sha,
                      remote_sha = excluded.remote_sha,
                      status = excluded.status,
                      backup_branch = excluded.backup_branch,
                      backup_side = excluded.backup_side,
+                     backup_missing = COALESCE(excluded.backup_missing, branch_status.backup_missing),
                      detail = excluded.detail,
                      updated_at = excluded.updated_at""",
                 (
                     pair_id, branch, local_sha, remote_sha, status,
-                    backup_branch or "", backup_side or "", detail, _now(),
+                    backup_branch or "", backup_side or "",
+                    None if backup_missing is None else int(backup_missing),
+                    detail, _now(),
                 ),
             )
 
@@ -249,6 +255,15 @@ class Store:
                 "SELECT * FROM branch_status WHERE repo_id = ? ORDER BY branch", (pair_id,)
             ).fetchall()
         return [_branch(row) for row in rows]
+
+    def mark_backup_missing(self, pair_id: int, branch: str, detail: str = "") -> None:
+        """备份已被清理时标记。"""
+        with self._lock, self.conn:
+            self.conn.execute(
+                "UPDATE branch_status SET backup_missing = 1, detail = ?"
+                " WHERE repo_id = ? AND branch = ?",
+                (detail, pair_id, branch),
+            )
 
     def prune_branches(self, pair_id: int, keep: set[str]) -> None:
         """删除已不存在的分支记录。"""
@@ -297,6 +312,7 @@ def _branch(row: sqlite3.Row) -> BranchState:
         status=row["status"],
         backup_branch=row["backup_branch"],
         backup_side=row["backup_side"],
+        backup_missing=bool(row["backup_missing"]),
         detail=row["detail"] or "",
         updated_at=row["updated_at"],
     )

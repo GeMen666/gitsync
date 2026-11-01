@@ -5,7 +5,7 @@ const STATUS = {
   need_pull: { label: '需拉取', tone: 'todo' },
   need_push: { label: '需推送', tone: 'todo' },
   synced: { label: '已同步', tone: 'ok' },
-  pending: { label: '有冲突（已选最新）', tone: 'warn' },
+  pending: { label: '有冲突', tone: 'warn' },
   error: { label: '出错了', tone: 'err' },
 }
 
@@ -24,6 +24,7 @@ export class Branch {
     this.detail = data.detail || ''
     this.backupBranch = data.backup_branch || ''
     this.backupSide = data.backup_side || ''
+    this.backupMissing = !!data.backup_missing
     this.updatedAt = data.updated_at || ''
   }
 
@@ -32,6 +33,8 @@ export class Branch {
   get hasLocal() { return !!this.localSha }
   get hasRemote() { return !!this.remoteSha }
   get isBusy() { return !!this.busy }
+  get hasBackup() { return !!this.backupBranch && !this.backupMissing }
+  get showResolve() { return this.status === 'pending' || !!this.backupBranch }
   get showActions() {
     if (!['need_push', 'need_pull', 'error'].includes(this.status)) return false
     return this.hasLocal || this.hasRemote

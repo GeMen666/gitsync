@@ -34,4 +34,7 @@ export const api = {
     request(`/api/pairs/${id}/branches/${branch}/push`, { method: 'POST' }),
   pull: (id, branch) =>
     request(`/api/pairs/${id}/branches/${branch}/pull`, { method: 'POST' }),
+  resolve: (id, branch, prefer) =>
+    request(`/api/pairs/${id}/branches/${branch}/resolve`, json({ prefer })),
+
 }

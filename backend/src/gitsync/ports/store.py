@@ -37,6 +37,7 @@ class BranchState:
     status: str
     backup_branch: str
     backup_side: str
+    backup_missing: bool
     detail: str
     updated_at: str
 
@@ -92,8 +93,10 @@ class StateStore(Protocol):
         status: str,
         backup_branch: str | None = None,
         backup_side: str | None = None,
+        backup_missing: bool | None = None,
         detail: str = "",
     ) -> None: ...
     def get_branch(self, pair_id: int, branch: str) -> BranchState | None: ...
     def list_branches(self, pair_id: int) -> list[BranchState]: ...
     def prune_branches(self, pair_id: int, keep: set[str]) -> None: ...
+    def mark_backup_missing(self, pair_id: int, branch: str, detail: str = "") -> None: ...

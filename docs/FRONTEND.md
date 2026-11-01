@@ -40,6 +40,7 @@ frontend/src/
 | `detail` | `detail` | 说明文字 |
 | `backupBranch` | `backup_branch` | 备份分支名 |
 | `backupSide` | `backup_side` | `local` / `remote` |
+| `backupMissing` | `backup_missing` | 备份是否已被清理 |
 | `updatedAt` | `updated_at` | 最后更新时间 |
 | `busy` | 前端 | `'' / push / pull`，**每个分支独立** |
 | `error` | 前端 | 该分支最近一次错误 |
@@ -51,8 +52,10 @@ frontend/src/
 | `hasLocal` | `localSha` 非空 |
 | `hasRemote` | `remoteSha` 非空 |
 | `showActions` | 是否需要显示推送/拉取（仅 `need_*` 和 `error` 显示） |
-| `statusLabel` | 中文标签：需拉取 / 需推送 / 已同步 / 有冲突（已选最新）/ 出错了 |
+| `statusLabel` | 中文标签：需拉取 / 需推送 / 已同步 / 有冲突 / 出错了 |
 | `statusTone` | 颜色标记：`todo` / `ok` / `warn` / `err` |
+| `hasBackup` | 有备份且未被清理 |
+| `showResolve` | 显示使用本地/使用远程（`pending` 或存在备份） |
 | `isBusy` | 该分支是否有操作在跑 |
 
 ### Pair
@@ -182,6 +185,7 @@ BranchTable emit push(item) → App.branchAction(pair, item, 'push')
 | `updatePair(id, body)` | `PATCH /api/pairs/{id}` |
 | `deletePair(id)` | `DELETE /api/pairs/{id}` |
 | `compare(id)` | `POST /api/pairs/{id}/compare` |
+| `resolve(id, branch, prefer)` | `POST /api/pairs/{id}/branches/{branch}/resolve` |
 | `sync(id)` | `POST /api/pairs/{id}/sync` |
 | `push(id, branch)` | `POST /api/pairs/{id}/branches/{branch}/push` |
 | `pull(id, branch)` | `POST /api/pairs/{id}/branches/{branch}/pull` |
@@ -201,7 +205,7 @@ BranchTable emit push(item) → App.branchAction(pair, item, 'push')
 | `need_pull` | 需拉取 | 浅蓝 |
 | `need_push` | 需推送 | 浅蓝 |
 | `synced` | 已同步 | 绿 |
-| `pending` | 有冲突（已选最新） | 黄 |
+| `pending` | 有冲突 | 黄 |
 | `error` | 出错了 | 红 |
 
 | 场景 | 表现 |
@@ -210,6 +214,7 @@ BranchTable emit push(item) → App.branchAction(pair, item, 'push')
 | 分支操作中 | 只有该行按钮置灰并转圈，其他行不受影响 |
 | `synced` / `pending` | 不显示推送/拉取按钮 |
 | `need_*` / `error` | 显示推送/拉取按钮 |
+| `pending` 或有备份 | 显示「使用本地 / 使用远程」，备份已清理时置灰 |
 | 只有本地 / 只有远程 | 只显示对应方向的按钮 |
 | 未配对 | 显示配对表单，左侧显示“未配置同步” |
 | 没有状态记录 | 提示“还没有状态记录，点『比对』生成” |

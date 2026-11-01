@@ -34,6 +34,10 @@ class PairBody(BaseModel):
     retention_days: int = 7
 
 
+class ResolveBody(BaseModel):
+    prefer: str
+
+
 class PairPatch(BaseModel):
     remote_url: str | None = None
     remote_username: str | None = None
@@ -238,6 +242,16 @@ def create_app(config_path: str | None = None) -> FastAPI:
         pair, session = owned_pair(request, pair_id)
         try:
             outcome = service_for(session).push(pair, branch)
+        except GitError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return asdict(outcome)
+
+    @app.post("/api/pairs/{pair_id}/branches/{branch:path}/resolve")
+    def branch_resolve(pair_id: int, branch: str, body: ResolveBody, request: Request):
+        """冲突时选择使用本地或远程。"""
+        pair, session = owned_pair(request, pair_id)
+        try:
+            outcome = service_for(session).resolve(pair, branch, body.prefer)
         except GitError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return asdict(outcome)

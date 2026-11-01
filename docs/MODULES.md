@@ -108,6 +108,7 @@
 | `sync_pair` | `Pair`         | `list[Outcome]` | 执行同步                 |
 | `push`      | `Pair, branch` | `Outcome`       | 单分支快进               |
 | `pull`      | `Pair, branch` | `Outcome`       | 单分支快进               |
+| `resolve`   | `Pair, branch, prefer` | `Outcome` | 冲突时选边对齐         |
 
 内部：
 
@@ -120,6 +121,7 @@
 | `_persist`      | 把结果写回 branches              |
 | `_cleanup`      | 清理过期备份                     |
 | `_manual_move`  | 单分支快进实现                   |
+| `resolve`       | 冲突选边：备份另一版本后两侧对齐 |
 
 数据：`Outcome(repo, branch, status, detail, backup_branch, backup_side, local_sha, remote_sha)`。
 
@@ -170,6 +172,7 @@
 | `/api/pairs/{id}/sync`                   | POST   | 执行同步                 |
 | `/api/pairs/{id}/branches/{branch}/push` | POST   | 单分支推送               |
 | `/api/pairs/{id}/branches/{branch}/pull` | POST   | 单分支拉取               |
+| `/api/pairs/{id}/branches/{branch}/resolve` | POST | 冲突时选边对齐        |
 
 内部辅助：`session_of`、`token_of`、`service_for`、`pair_view`、`owned_pair`、`require_push`。
 

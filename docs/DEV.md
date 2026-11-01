@@ -86,10 +86,13 @@
 | `need_pull` | 远程有更新，需要拉取 |
 | `need_push` | 本地有更新，需要推送 |
 | `synced` | 两端一致 |
-| `pending` | 有冲突，已按较新者胜处理并备份 |
+| `pending` | 有冲突，已按较新者胜处理，另一版本备份保留 |
 | `error` | 操作失败，详情见 detail |
 
 比对（compare）返回前四种；同步（sync）成功后状态为 `synced` 或 `pending`。
+
+`pending` 时备注格式为「本地/远程较新，已使用本地/远程，备份存在」；
+备份被清理后改为「备份已删除」，此时不能再切换。
 
 ---
 
@@ -232,6 +235,16 @@
 ```
 
 非快进：`400`，detail 提示改用「同步」。
+
+#### `POST /api/pairs/{id}/branches/{branch}/resolve`
+
+冲突时选择最终版本，两边强制对齐，备份保留。
+
+```json
+{ "prefer": "local" }
+```
+
+`prefer` 取 `local` 或 `remote`。没有备份或备份已清理时返回 400。
 
 #### `POST /api/pairs/{id}/branches/{branch}/pull`
 

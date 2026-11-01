@@ -158,6 +158,18 @@ function sync(pair) {
   run(pair, 'sync', () => api.sync(pair.id))
 }
 
+async function resolveBranch(pair, item, prefer) {
+  item.begin('resolve')
+  try {
+    await api.resolve(pair.id, item.branch, prefer)
+    await refresh()
+  } catch (exc) {
+    pair.fail(exc.message)
+  } finally {
+    item.end()
+  }
+}
+
 async function branchAction(pair, item, action) {
   const call = action === 'push' ? api.push : api.pull
   item.begin(action)
@@ -252,6 +264,7 @@ onMounted(loadMe)
               :pair="currentPair"
               @push="(item) => branchAction(currentPair, item, 'push')"
               @pull="(item) => branchAction(currentPair, item, 'pull')"
+              @resolve="(item, prefer) => resolveBranch(currentPair, item, prefer)"
             />
             <p v-else class="muted">还没有状态记录，点「比对」生成。</p>
           </template>
