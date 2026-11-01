@@ -220,22 +220,21 @@ class Store:
             self.conn.execute(
                 """INSERT INTO branch_status
                    (repo_id, branch, local_sha, remote_sha, status,
-                    backup_branch, backup_side, backup_missing, detail, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    backup_branch, backup_side, detail, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(repo_id, branch) DO UPDATE SET
                      local_sha = excluded.local_sha,
                      remote_sha = excluded.remote_sha,
                      status = excluded.status,
                      backup_branch = excluded.backup_branch,
                      backup_side = excluded.backup_side,
-                     backup_missing = COALESCE(excluded.backup_missing, branch_status.backup_missing),
+                     backup_missing = COALESCE(?, branch_status.backup_missing),
                      detail = excluded.detail,
                      updated_at = excluded.updated_at""",
                 (
                     pair_id, branch, local_sha, remote_sha, status,
-                    backup_branch or "", backup_side or "",
+                    backup_branch or "", backup_side or "", detail, _now(),
                     None if backup_missing is None else int(backup_missing),
-                    detail, _now(),
                 ),
             )
 

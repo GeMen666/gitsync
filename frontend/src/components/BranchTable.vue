@@ -65,7 +65,7 @@ const emit = defineEmits(['push', 'pull', 'resolve'])
 .table-wrap { overflow-x: auto; margin-top: 16px; }
 .status { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-weight: 600; font-size: 12px; color: #999; padding: 0 8px 6px 0; border-bottom: 1px solid #eee; }
-td { height: 52px; padding: 4px 8px 4px 0; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+td { height: 50px; padding: 4px 8px 4px 0; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
 .b-name { font-size: 12.5px; line-height: 1.3; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
 .b-sha { font-size: 10.5px; color: #aaa; line-height: 1.3; }
 td.branch { white-space: nowrap; min-width: 110px; max-width: 200px; }
