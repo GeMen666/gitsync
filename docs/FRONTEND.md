@@ -55,7 +55,7 @@ frontend/src/
 | `statusLabel` | 中文标签：需拉取 / 需推送 / 已同步 / 有冲突 / 出错了 |
 | `statusTone` | 颜色标记：`todo` / `ok` / `warn` / `err` |
 | `hasBackup` | 有备份且未被清理 |
-| `showResolve` | 显示使用本地/使用远程（`pending` 或存在备份） |
+| `showResolve` | 显示使用本地/使用远程（有备份且未清理） |
 | `isBusy` | 该分支是否有操作在跑 |
 
 ### Pair
@@ -214,7 +214,8 @@ BranchTable emit push(item) → App.branchAction(pair, item, 'push')
 | 分支操作中 | 只有该行按钮置灰并转圈，其他行不受影响 |
 | `synced` / `pending` | 不显示推送/拉取按钮 |
 | `need_*` / `error` | 显示推送/拉取按钮 |
-| `pending` 或有备份 | 显示「使用本地 / 使用远程」，备份已清理时置灰 |
+| `pending` 且有备份 | 显示「使用本地 / 使用远程」 |
+| 备份已清理 | 归为已同步，不显示按钮 |
 | 只有本地 / 只有远程 | 只显示对应方向的按钮 |
 | 未配对 | 显示配对表单，左侧显示“未配置同步” |
 | 没有状态记录 | 提示“还没有状态记录，点『比对』生成” |

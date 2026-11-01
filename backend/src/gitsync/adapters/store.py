@@ -260,7 +260,7 @@ class Store:
         """备份已被清理时标记。"""
         with self._lock, self.conn:
             self.conn.execute(
-                "UPDATE branch_status SET backup_missing = 1, detail = ?"
+                "UPDATE branch_status SET backup_missing = 1, status = 'synced', detail = ?"
                 " WHERE repo_id = ? AND branch = ?",
                 (detail, pair_id, branch),
             )

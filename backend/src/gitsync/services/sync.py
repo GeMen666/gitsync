@@ -251,11 +251,23 @@ class SyncService:
 
         if lsha == rsha:
             if existing and existing.backup_branch:
+                if existing.backup_missing:
+                    return Outcome(pair.name, branch, "synced", "备份已删除",
+                                   backup_branch=existing.backup_branch,
+                                   backup_side=existing.backup_side,
+                                   backup_missing=True)
+                if existing.status == "synced":
+                    return Outcome(
+                        pair.name, branch, "synced", existing.detail,
+                        backup_branch=existing.backup_branch,
+                        backup_side=existing.backup_side,
+                    )
+                winner = "本地" if existing.backup_side == "remote" else "远程"
                 return Outcome(
-                    pair.name, branch, existing.status, existing.detail,
+                    pair.name, branch, "pending",
+                    f"{winner}较新，已使用{winner}，备份存在",
                     backup_branch=existing.backup_branch,
                     backup_side=existing.backup_side,
-                    backup_missing=existing.backup_missing,
                 )
             return Outcome(pair.name, branch, "synced", (lsha or "")[:8])
 

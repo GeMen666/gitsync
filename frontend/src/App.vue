@@ -282,7 +282,7 @@ onMounted(loadMe)
 </template>
 
 <style scoped>
-.page { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+.page { max-width: 1120px; margin: 0 auto; padding: 28px 24px 60px; }
 
 .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .brand h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
@@ -290,9 +290,9 @@ onMounted(loadMe)
 .actions { display: flex; align-items: center; gap: 10px; }
 .who { color: #666; font-size: 13px; }
 
-.layout { display: grid; grid-template-columns: 260px 1fr; gap: 24px; margin-top: 24px; }
+.layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; margin-top: 24px; }
 
-.detail { min-height: 200px; }
+.detail { min-height: 200px; min-width: 0; }
 .detail.busy button { opacity: .5; filter: grayscale(.4); }
 .detail-head { display: flex; align-items: center; gap: 8px; }
 .detail-head h2 { margin: 0; font-size: 16px; font-family: ui-monospace, monospace; }

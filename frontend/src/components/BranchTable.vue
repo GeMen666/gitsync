@@ -19,8 +19,18 @@ const emit = defineEmits(['push', 'pull', 'resolve'])
       </thead>
       <tbody>
         <tr v-for="item in pair.branches" :key="item.branch">
-          <td class="mono branch">{{ item.hasLocal ? item.branch : '' }}</td>
-          <td class="mono branch">{{ item.hasRemote ? item.branch : '' }}</td>
+          <td class="mono branch">
+            <template v-if="item.hasLocal">
+              <div class="b-name">{{ item.branch }}</div>
+              <div class="b-sha">{{ item.localSha.slice(0, 7) }}</div>
+            </template>
+          </td>
+          <td class="mono branch">
+            <template v-if="item.hasRemote">
+              <div class="b-name">{{ item.branch }}</div>
+              <div class="b-sha">{{ item.remoteSha.slice(0, 7) }}</div>
+            </template>
+          </td>
           <td class="status-cell"><span :class="['badge', item.statusTone]">{{ item.statusLabel }}</span></td>
           <td class="note"><span class="muted">{{ item.detail }}</span></td>
           <td class="ops">
@@ -55,12 +65,14 @@ const emit = defineEmits(['push', 'pull', 'resolve'])
 .table-wrap { overflow-x: auto; margin-top: 16px; }
 .status { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-weight: 600; font-size: 12px; color: #999; padding: 0 8px 6px 0; border-bottom: 1px solid #eee; }
-td { height: 40px; padding: 6px 8px 6px 0; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
-td.branch { white-space: nowrap; min-width: 160px; }
-td.status-cell { white-space: nowrap; min-width: 150px; }
+td { height: 52px; padding: 4px 8px 4px 0; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+.b-name { font-size: 12.5px; line-height: 1.3; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.b-sha { font-size: 10.5px; color: #aaa; line-height: 1.3; }
+td.branch { white-space: nowrap; min-width: 110px; max-width: 200px; }
+td.status-cell { white-space: nowrap; min-width: 96px; }
 .status th:nth-child(3) { white-space: nowrap; }
-td.note { width: 100%; min-width: 240px; }
-th.ops, td.ops { width: 190px; text-align: right; padding-right: 0; white-space: nowrap; }
+td.note { width: 100%; min-width: 150px; }
+th.ops, td.ops { width: 150px; text-align: right; padding-right: 0; white-space: nowrap; }
 .arb { display: inline-flex; gap: 6px; justify-content: flex-end; }
 .mono { font-family: ui-monospace, monospace; }
 .badge { font-size: 11px; border-radius: 4px; padding: 1px 6px; background: #e8f0ea; color: #2f6f4e; }

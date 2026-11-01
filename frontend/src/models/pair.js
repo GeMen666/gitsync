@@ -34,7 +34,7 @@ export class Branch {
   get hasRemote() { return !!this.remoteSha }
   get isBusy() { return !!this.busy }
   get hasBackup() { return !!this.backupBranch && !this.backupMissing }
-  get showResolve() { return this.status === 'pending' || !!this.backupBranch }
+  get showResolve() { return !!this.backupBranch && !this.backupMissing }
   get showActions() {
     if (!['need_push', 'need_pull', 'error'].includes(this.status)) return false
     return this.hasLocal || this.hasRemote
