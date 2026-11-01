@@ -259,13 +259,14 @@ onMounted(loadMe)
               <button :disabled="currentPair.isLocked" @click="saveCred(currentPair)">保存凭据</button>
             </div>
 
-            <BranchTable
-              v-if="currentPair.branches.length"
-              :pair="currentPair"
-              @push="(item) => branchAction(currentPair, item, 'push')"
-              @pull="(item) => branchAction(currentPair, item, 'pull')"
-              @resolve="(item, prefer) => resolveBranch(currentPair, item, prefer)"
-            />
+            <div v-if="currentPair.branches.length" class="detail-grid">
+              <BranchTable
+                :pair="currentPair"
+                @push="(item) => branchAction(currentPair, item, 'push')"
+                @pull="(item) => branchAction(currentPair, item, 'pull')"
+                @resolve="(item, prefer) => resolveBranch(currentPair, item, prefer)"
+              />
+            </div>
             <p v-else class="muted">还没有状态记录，点「比对」生成。</p>
           </template>
 
@@ -282,7 +283,7 @@ onMounted(loadMe)
 </template>
 
 <style scoped>
-.page { max-width: 1120px; margin: 0 auto; padding: 28px 24px 60px; }
+.page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 60px; }
 
 .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .brand h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
@@ -311,6 +312,12 @@ onMounted(loadMe)
 
 .muted { color: #999; font-size: 12px; }
 .error { color: #c0392b; font-size: 13px; }
+
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 16px; align-items: start; }
+
+@media (max-width: 900px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 720px) {
   .layout { grid-template-columns: 1fr; }

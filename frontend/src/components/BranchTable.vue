@@ -32,7 +32,7 @@ const emit = defineEmits(['push', 'pull', 'resolve'])
             </template>
           </td>
           <td class="status-cell"><span :class="['badge', item.statusTone]">{{ item.statusLabel }}</span></td>
-          <td class="note"><span class="muted">{{ item.detail }}</span></td>
+          <td class="note" :title="item.detail"><span class="muted">{{ item.detail }}</span></td>
           <td class="ops">
             <span v-if="item.showResolve" class="arb">
               <button class="small" :disabled="pair.isBusy || item.isBusy || !item.hasBackup"
@@ -68,10 +68,10 @@ th { text-align: left; font-weight: 600; font-size: 12px; color: #999; padding: 
 td { height: 50px; padding: 4px 8px 4px 0; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
 .b-name { font-size: 12.5px; line-height: 1.3; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
 .b-sha { font-size: 10.5px; color: #aaa; line-height: 1.3; }
-td.branch { white-space: nowrap; min-width: 110px; max-width: 200px; }
+td.branch { white-space: nowrap; min-width: 100px; max-width: 170px; }
 td.status-cell { white-space: nowrap; min-width: 96px; }
 .status th:nth-child(3) { white-space: nowrap; }
-td.note { width: 100%; min-width: 150px; }
+td.note { width: auto; min-width: 120px; }
 th.ops, td.ops { width: 150px; text-align: right; padding-right: 0; white-space: nowrap; }
 .arb { display: inline-flex; gap: 6px; justify-content: flex-end; }
 .mono { font-family: ui-monospace, monospace; }
@@ -80,6 +80,10 @@ th.ops, td.ops { width: 150px; text-align: right; padding-right: 0; white-space:
 .badge.warn { background: #fff3d6; color: #8a6d1f; }
 .badge.err { background: #fbeaea; color: #b5483a; }
 .muted { color: #999; font-size: 12px; }
+.note .muted {
+  display: block; max-width: 330px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .spin {
   display: inline-block; width: 11px; height: 11px; margin-left: 6px;
   border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff;
