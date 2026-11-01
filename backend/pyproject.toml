@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gitsync"
+version = "0.1.0"
+description = "本地 Gitea 与远程 Git 仓库的分支级双向同步"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["cryptography>=42"]
+
+[project.optional-dependencies]
+web = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "apscheduler>=3.10",
+]
+dev = ["pytest>=8"]
+
+[project.scripts]
+gitsync = "gitsync.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gitsync"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

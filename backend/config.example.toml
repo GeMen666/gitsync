@@ -1,0 +1,15 @@
+# 复制为 config.toml 后填写，并 chmod 600。
+# config.toml 已在 .gitignore 中，不会进版本库。
+
+[local]
+# 本地 Gitea
+url = "http://localhost:3000"
+
+[paths]
+db = "data/gitsync.db"
+temp = "temp"
+logs = "logs"
+
+[security]
+# 加密用户令牌和远程仓库凭据所用的环境变量
+secret_key_env = "GITSYNC_SECRET"
