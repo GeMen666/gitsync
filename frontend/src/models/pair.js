@@ -1,6 +1,14 @@
 // 仓库对象：一个 Pair 承载自己的分支、选中状态和运行状态。
 // 所有和“某个仓库”相关的显示都由它派生，页面不再维护全局 busy。
 
+const STATUS = {
+  need_pull: { label: '需拉取', tone: 'todo' },
+  need_push: { label: '需推送', tone: 'todo' },
+  synced: { label: '已同步', tone: 'ok' },
+  pending: { label: '有冲突（已选最新）', tone: 'warn' },
+  error: { label: '出错了', tone: 'err' },
+}
+
 export class Branch {
   constructor(data = {}) {
     this.busy = ''      // '' | 'push' | 'pull'
@@ -19,11 +27,13 @@ export class Branch {
     this.updatedAt = data.updated_at || ''
   }
 
+  get statusLabel() { return (STATUS[this.status] || {}).label || this.status }
+  get statusTone() { return (STATUS[this.status] || {}).tone || '' }
   get hasLocal() { return !!this.localSha }
   get hasRemote() { return !!this.remoteSha }
   get isBusy() { return !!this.busy }
   get showActions() {
-    if (this.status === 'synced' || this.status === 'pending') return false
+    if (!['need_push', 'need_pull', 'error'].includes(this.status)) return false
     return this.hasLocal || this.hasRemote
   }
 

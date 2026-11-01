@@ -21,7 +21,7 @@ const emit = defineEmits(['push', 'pull'])
         <tr v-for="item in pair.branches" :key="item.branch">
           <td class="mono branch">{{ item.hasLocal ? item.branch : '' }}</td>
           <td class="mono branch">{{ item.hasRemote ? item.branch : '' }}</td>
-          <td><span :class="['badge', item.status]">{{ item.status }}</span></td>
+          <td><span :class="['badge', item.statusTone]">{{ item.statusLabel }}</span></td>
           <td class="note"><span class="muted">{{ item.detail }}</span></td>
           <td class="ops">
             <span v-if="item.showActions" class="arb">
@@ -52,8 +52,9 @@ th.ops, td.ops { width: 150px; text-align: right; padding-right: 0; white-space:
 .arb { display: inline-flex; gap: 6px; justify-content: flex-end; }
 .mono { font-family: ui-monospace, monospace; }
 .badge { font-size: 11px; border-radius: 4px; padding: 1px 6px; background: #e8f0ea; color: #2f6f4e; }
-.badge.error, .badge.skipped { background: #fbeaea; color: #b5483a; }
-.badge.pending { background: #fff3d6; color: #8a6d1f; }
+.badge.todo { background: #e6f2fb; color: #2b6c9e; }
+.badge.warn { background: #fff3d6; color: #8a6d1f; }
+.badge.err { background: #fbeaea; color: #b5483a; }
 .muted { color: #999; font-size: 12px; }
 .spin {
   display: inline-block; width: 11px; height: 11px; margin-right: 6px;

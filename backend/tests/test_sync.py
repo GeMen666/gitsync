@@ -96,13 +96,13 @@ class SyncTest(unittest.TestCase):
     def test_creates_branch_on_remote(self):
         self.commit(self.local_repo, "main", "a", "2026-01-01T10:00:00+0000", new=True)
         result = self.run_sync()
-        self.assertEqual(result["main"].status, "pushed")
+        self.assertEqual(result["main"].status, "synced")
         self.assertEqual(self.heads(self.remote_repo), self.heads(self.local_repo))
 
     def test_creates_branch_on_local(self):
         self.commit(self.remote_repo, "feature", "b", "2026-01-01T10:00:00+0000", new=True)
         result = self.run_sync()
-        self.assertEqual(result["feature"].status, "pulled")
+        self.assertEqual(result["feature"].status, "synced")
         self.assertEqual(self.heads(self.local_repo), self.heads(self.remote_repo))
 
     def test_identical_branches_are_synced(self):

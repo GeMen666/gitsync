@@ -33,7 +33,7 @@ class Outcome:
 
     @property
     def ok(self) -> bool:
-        return self.status in {"synced", "pushed", "pulled", "pending", "cleaned"}
+        return self.status in {"synced", "pending", "cleaned"}
 
 
 class SyncService:
@@ -163,13 +163,15 @@ class SyncService:
             if not dry:
                 ws.fetch(local, branch)
                 ws.push(remote, lsha, branch)
-            return Outcome(pair.name, branch, "pushed", f"{verb}创建远程分支 {lsha[:8]}")
+            status = "need_push" if dry else "synced"
+            return Outcome(pair.name, branch, status, f"{verb}创建远程分支 {lsha[:8]}")
 
         if rsha and not lsha:
             if not dry:
                 ws.fetch(remote, branch)
                 ws.push(local, rsha, branch)
-            return Outcome(pair.name, branch, "pulled", f"{verb}创建本地分支 {rsha[:8]}")
+            status = "need_pull" if dry else "synced"
+            return Outcome(pair.name, branch, status, f"{verb}创建本地分支 {rsha[:8]}")
 
         assert lsha and rsha
         ws.fetch(local, branch)
@@ -278,7 +280,7 @@ class SyncService:
             ws.fetch(source, branch)
             ws.push(target, src_sha, branch)
 
-        status = "pushed" if direction == "push" else "pulled"
+        status = "synced"
         detail = "已推送到远程" if direction == "push" else "已从远程拉取"
         self.store.save_branch(
             pair.id, branch,

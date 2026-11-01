@@ -36,7 +36,7 @@ frontend/src/
 | `branch` | `branch` | 分支名 |
 | `localSha` | `local_sha` | 空表示本地没有 |
 | `remoteSha` | `remote_sha` | 空表示远程没有 |
-| `status` | `status` | `synced/pushed/pulled/pending/error/skipped` |
+| `status` | `status` | `need_pull / need_push / synced / pending / error` |
 | `detail` | `detail` | 说明文字 |
 | `backupBranch` | `backup_branch` | 备份分支名 |
 | `backupSide` | `backup_side` | `local` / `remote` |
@@ -50,7 +50,9 @@ frontend/src/
 |---|---|
 | `hasLocal` | `localSha` 非空 |
 | `hasRemote` | `remoteSha` 非空 |
-| `showActions` | 是否需要显示推送/拉取（`synced`、`pending` 不显示） |
+| `showActions` | 是否需要显示推送/拉取（仅 `need_*` 和 `error` 显示） |
+| `statusLabel` | 中文标签：需拉取 / 需推送 / 已同步 / 有冲突（已选最新）/ 出错了 |
+| `statusTone` | 颜色标记：`todo` / `ok` / `warn` / `err` |
 | `isBusy` | 该分支是否有操作在跑 |
 
 ### Pair
@@ -194,11 +196,20 @@ BranchTable emit push(item) → App.branchAction(pair, item, 'push')
 
 ## 6. 显示规则
 
+| 状态 | 标签 | 颜色 |
+|---|---|---|
+| `need_pull` | 需拉取 | 浅蓝 |
+| `need_push` | 需推送 | 浅蓝 |
+| `synced` | 已同步 | 绿 |
+| `pending` | 有冲突（已选最新） | 黄 |
+| `error` | 出错了 | 红 |
+
 | 场景 | 表现 |
 |---|---|
 | 仓库有操作在跑 | 该仓库按钮与详情区置灰，其他仓库不受影响 |
 | 分支操作中 | 只有该行按钮置灰并转圈，其他行不受影响 |
 | `synced` / `pending` | 不显示推送/拉取按钮 |
+| `need_*` / `error` | 显示推送/拉取按钮 |
 | 只有本地 / 只有远程 | 只显示对应方向的按钮 |
 | 未配对 | 显示配对表单，左侧显示“未配置同步” |
 | 没有状态记录 | 提示“还没有状态记录，点『比对』生成” |
